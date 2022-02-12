@@ -15,9 +15,12 @@ if __name__ == "__main__":
     serverSocket.bind(('', PORT))
     serverSocket.listen(1)
 
-    file = open(LOG_FILENAME, "r+")
-    file.truncate(0);
-    file.close();
+    try:
+        file = open(LOG_FILENAME, "r+")
+        file.truncate(0);
+        file.close();
+    except:
+        pass
 
     fernet = Fernet(KEY)
 
