@@ -4,7 +4,7 @@ from datetime import datetime
 from socket import *
 from cryptography.fernet import Fernet
 
-SERVER = 'localhost'
+SERVER = '192.168.43.110'
 PORT = 8888
 LOG_INTERVAL = 10 # seconds
 KEY = b'_AOWbfP5NT6qUsssqqnIEas54V2_XuwzJDJeRwTQORQ='
